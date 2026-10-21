@@ -1,0 +1,38 @@
+name: build-1.17.2-dll
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    env:
+      RUSTUP_TOOLCHAIN: nightly
+    steps:
+      - name: Get the author's 1.17.2 commit (pinned)
+        uses: actions/checkout@v4
+        with:
+          repository: KamiyamaShiki0704/ERCharacterScale
+          ref: 9d6b66ebbdb6e04efcc44be02781976b370ab7c4
+
+      - name: Install Rust nightly
+        run: rustup toolchain install nightly --profile minimal --target x86_64-pc-windows-msvc
+
+      - name: Build DLL
+        run: cargo build --release --locked
+
+      - name: Check imports (informational)
+        continue-on-error: true
+        run: python tools/check_runtime_deps.py target/x86_64-pc-windows-msvc/release/ERCharacterScale.dll
+
+      - name: Show SHA-256
+        shell: pwsh
+        run: Get-FileHash target/x86_64-pc-windows-msvc/release/ERCharacterScale.dll -Algorithm SHA256
+
+      - name: Upload DLL
+        uses: actions/upload-artifact@v4
+        with:
+          name: ERCharacterScale-1.17.2
+          path: |
+            target/x86_64-pc-windows-msvc/release/ERCharacterScale.dll
+            ERCharacterScale.toml
